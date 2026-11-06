@@ -1,17 +1,18 @@
 from fastmcp import FastMCP
-from fastmcp.server.auth.providers.keycloak import KeycloakAuthProvider
+from fastmcp.server.auth.oidc_proxy import OIDCProxy
 from cisco_ssh_mcp.config import settings
 from cisco_ssh_mcp.ssh_manager import ssh_manager
 from cisco_ssh_mcp.rbac import authorize_command
 
 # Initialize OIDC Auth Provider (optional - for production)
-# Note: KeycloakAuthProvider is used for compatibility, but any OIDC-compliant provider works
+# Uses OIDCProxy which works with Keycloak and other OIDC providers
 auth_provider = None
 if settings.auth_enabled and settings.oidc_url.strip():
-    auth_provider = KeycloakAuthProvider(
-        url=settings.oidc_url,
-        realm=settings.oidc_realm,
-        client_id=settings.oidc_client_id
+    auth_provider = OIDCProxy(
+        config_url=f"{settings.oidc_url.rstrip('/')}/.well-known/openid-configuration",
+        client_id=settings.oidc_client_id,
+        client_secret=settings.oidc_client_secret or None,
+        base_url=settings.base_url or "http://localhost:8000"
     )
 
 # Initialize FastMCP with optional authentication middleware

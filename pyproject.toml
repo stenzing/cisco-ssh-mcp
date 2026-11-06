@@ -2,17 +2,18 @@
 name = "cisco-ssh-mcp"
 version = "1.0.0"
 description = "Secure remote MCP server for Cisco routers with optional OIDC authentication and RBAC"
-authors = ["Your Name <you@example.com>"]
+authors = ["Gabor Stenzinger <gabor.stenzinger@gmail.com>"]
 readme = "README.md"
 packages = [{include = "cisco_ssh_mcp"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
-fastmcp = "^0.4.0"
-paramiko = "^3.4.0"
-pydantic-settings = "^2.2.0"
-python-jose = {extras = ["cryptography"], version = "^3.3.0"}
-uvicorn = "^0.29.0"
+fastmcp = "4.1.6"
+paramiko = "5.1.0"
+pydantic = "2.14.3"
+pydantic-settings = "2.16.2"
+python-jose = {extras = ["cryptography"], version = "3.5.0"}
+uvicorn = "0.54.0"
 
 [build-system]
 requires = ["poetry-core"]
