@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "cisco-ssh-mcp"
 version = "1.0.0"
-description = "Secure remote MCP server for Cisco routers with Keycloak authentication and RBAC"
+description = "Secure remote MCP server for Cisco routers with optional OIDC authentication and RBAC"
 authors = ["Your Name <you@example.com>"]
 readme = "README.md"
 packages = [{include = "cisco_ssh_mcp"}]

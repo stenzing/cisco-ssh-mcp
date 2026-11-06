@@ -10,6 +10,9 @@ VIEWER_ALLOWED_PATTERNS = [
 
 def authorize_command(roles: list[str], command: str) -> tuple[bool, str]:
     """Validate if the user's assigned roles permit the requested command."""
+    if not roles:
+        return False, "RBAC Error: No roles assigned."
+    
     if "network-admin" in roles or "admin" in roles:
         return True, ""
     
