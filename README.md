@@ -24,12 +24,15 @@ cisco-ssh-mcp/
 ├── pyproject.toml
 ├── Dockerfile
 ├── README.md
+├── router_inventory.json (example router inventory for file store)
+├── .env.example
 └── cisco_ssh_mcp/
     ├── __init__.py
     ├── config.py
     ├── server.py
     ├── ssh_manager.py
-    └── rbac.py
+    ├── rbac.py
+    └── router_store.py (new - generic interface for credential stores)
 ```
 
 ---
@@ -156,19 +159,28 @@ Extract the `access_token` from the JSON response and use it in your client conf
 
 ## Available Tools
 
-Once connected, the MCP server exposes two tools:
+Once connected, the MCP server exposes the following tools:
 
 ### `cisco_connect`
 
-Connects to a Cisco device via SSH and stores the active session.
+Connects to a Cisco device via SSH using pre-configured credentials from the router store.
 
 **Parameters:**
-- `host` (string): IP address or hostname of the Cisco device
-- `username` (string): SSH username
-- `password` (string): SSH password
-- `connection_id` (string): Unique identifier for this session
+- `router_id` (string): ID of the router to connect to (from configured router store)
+- `ctx`: FastMCP context for authentication/authorization
 
 **Authorization:** Requires `network-admin` or `admin` role.
+
+### `cisco_list_routers`
+
+Lists all available routers from the configured router store.
+
+**Parameters:**
+- `ctx`: FastMCP context for authentication/authorization
+
+**Authorization:** Requires `network-admin` or `admin` role.
+
+**Returns:** JSON string of all available routers with their IDs and host addresses.
 
 ### `cisco_execute`
 
@@ -193,7 +205,31 @@ Executes a CLI command on an active Cisco session with RBAC enforcement.
 | `OIDC_REALM` | OIDC realm or tenant name | `network-operations` | Yes (if auth enabled) |
 | `OIDC_CLIENT_ID` | OIDC client ID for this service | `mcp-cisco-server` | Yes (if auth enabled) |
 | `UNAUTHENTICATED_ROLE` | Role assigned when auth is disabled (`network-admin` or `viewer`) | `network-admin` | No |
-| `ROUTER_INVENTORY_JSON` | JSON string with router inventory (production: use HashiCorp Vault or Docker secrets) | `{}` | No |
+| `ROUTER_STORE_TYPE` | Router store type: static, file, or env | `static` | No |
+| `ROUTER_INVENTORY_JSON` | JSON string with router inventory (used by static store) | `{}` | No |
+| `ROUTER_STORE_CONFIG` | Additional store-specific config as JSON | `{}` | No |
+
+### Router Store Configuration
+
+The server supports multiple router store types:
+
+**Static Store** (`ROUTER_STORE_TYPE=static`):
+```bash
+ROUTER_INVENTORY_JSON='{"rtr-01": {"host": "10.0.1.1", "username": "admin", "password": "secret"}}'
+```
+
+**File Store** (`ROUTER_STORE_TYPE=file`):
+```bash
+ROUTER_STORE_CONFIG={"filepath": "./router_inventory.json"}
+```
+
+**Environment Store** (`ROUTER_STORE_TYPE=env`):
+```bash
+ROUTER_STORE_CONFIG={"prefix": "ROUTER_"}
+ROUTER_RTR01_HOST=10.0.1.1
+ROUTER_RTR01_USERNAME=admin
+ROUTER_RTR01_PASSWORD=secret
+```
 
 ---
 
@@ -201,9 +237,10 @@ Executes a CLI command on an active Cisco session with RBAC enforcement.
 
 - **Development Mode**: When `AUTH_ENABLED=false`, all operations are available without authentication. Only use this for local development.
 - **Production Mode**: Always enable authentication in production. Protect the server with TLS via a reverse proxy.
-- **Credentials**: Do not hardcode credentials. Use Docker secrets, HashiCorp Vault, or a similar secrets management solution.
+- **Credentials**: Do not hardcode credentials. Use Docker secrets, HashiCorp Vault, or environment variables. The router store interface allows flexible credential management.
 - **Transport**: The server exposes an SSE endpoint; protect it with TLS in production (e.g., via a reverse proxy like NGINX).
 - **RBAC**: Customize roles and allowed command patterns in `cisco_ssh_mcp/rbac.py` to match your organization's policy.
+- **Router Store**: Implement custom stores for production use (e.g., Vault-backed, API-backed). See `cisco_ssh_mcp/router_store.py` for the interface.
 
 ---
 
@@ -226,12 +263,41 @@ poetry run mcp-server
 #   $env:OIDC_URL='https://your-oidc-provider.com'
 #   $env:OIDC_REALM='your-realm'
 #   $env:OIDC_CLIENT_ID='your-client-id'
+#   $env:ROUTER_STORE_TYPE='file'
+#   $env:ROUTER_STORE_CONFIG='{"filepath": "./router_inventory.json"}'
 # Linux/macOS:
 #   export AUTH_ENABLED=true
 #   export OIDC_URL=https://your-oidc-provider.com
 #   export OIDC_REALM=your-realm
 #   export OIDC_CLIENT_ID=your-client-id
+#   export ROUTER_STORE_TYPE=file
+#   export ROUTER_STORE_CONFIG='{"filepath": "./router_inventory.json"}'
 poetry run mcp-server
+```
+
+### Custom Router Store Implementation
+
+To implement a custom router store, extend the `RouterStore` abstract base class:
+
+```python
+from cisco_ssh_mcp.router_store import RouterStore
+
+class VaultRouterStore(RouterStore):
+    def __init__(self, vault_url: str, token: str):
+        self.vault_url = vault_url
+        self.token = token
+    
+    def get_router(self, router_id: str) -> Optional[dict]:
+        # Fetch credentials from HashiCorp Vault
+        ...
+    
+    def list_routers(self) -> list[dict]:
+        # List all routers from Vault
+        ...
+
+# Then configure:
+# ROUTER_STORE_TYPE=custom
+# ROUTER_STORE_CONFIG={"vault_url": "...", "token": "..."}
 ```
 
 ### Run Tests (if added)
