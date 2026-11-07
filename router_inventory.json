@@ -1,0 +1,19 @@
+{
+  "rtr-core-01": {
+    "host": "10.0.1.1",
+    "username": "admin",
+    "password": "secret123",
+    "port": 22
+  },
+  "rtr-edge-01": {
+    "host": "10.0.2.1",
+    "username": "netops",
+    "password": "password456",
+    "port": 22
+  },
+  "rtr-dmz-01": {
+    "host": "192.168.10.1",
+    "username": "dmz_admin",
+    "password": "dmz_secret789"
+  }
+}

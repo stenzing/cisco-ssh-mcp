@@ -17,8 +17,10 @@ class Settings(BaseSettings):
     # Server base URL (required for OIDC callback redirect)
     base_url: str = "http://localhost:8000"
     
-    # Example router inventory secrets (in production, use HashiCorp Vault or Docker secrets)
-    router_inventory_json: str = "{}"
+    # Router store configuration
+    router_store_type: str = "static"  # Options: static, file, env
+    router_inventory_json: str = "{}"  # Used by static store
+    router_store_config: dict = {}     # Additional store-specific config
 
     class Config:
         env_file = ".env"
