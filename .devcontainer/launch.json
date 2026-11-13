@@ -1,0 +1,41 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python: Current File",
+      "type": "python",
+      "request": "launch",
+      "module": "cisco_ssh_mcp.server",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "env": {
+        "AUTH_ENABLED": "false",
+        "ROUTER_STORE_TYPE": "static",
+        "ROUTER_INVENTORY_JSON": "{\"rtr-01\": {\"host\": \"10.0.1.1\", \"username\": \"admin\", \"password\": \"secret\"}}"
+      },
+      "args": []
+    },
+    {
+      "name": "Python: Attach using Process ID",
+      "type": "python",
+      "request": "attach",
+      "processId": "${command:pickProcess}",
+      "justMyCode": false
+    },
+    {
+      "name": "Python: Remote Debug (Docker)",
+      "type": "python",
+      "request": "attach",
+      "connect": {
+        "host": "localhost",
+        "port": 5678
+      },
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}",
+          "remoteRoot": "/home/vscode/workspace"
+        }
+      ]
+    }
+  ]
+}
